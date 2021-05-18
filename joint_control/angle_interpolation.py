@@ -20,9 +20,11 @@
 '''
 
 
+from scipy.interpolate.fitpack import splrep
 from pid import PIDAgent
 from keyframes import hello
-
+from scipy.interpolate import splev,bisplrep,interp1d
+import numpy as np
 
 class AngleInterpolationAgent(PIDAgent):
     def __init__(self, simspark_ip='localhost',
@@ -39,9 +41,16 @@ class AngleInterpolationAgent(PIDAgent):
         return super(AngleInterpolationAgent, self).think(perception)
 
     def angle_interpolation(self, keyframes, perception):
-        target_joints = {}
         # YOUR CODE HERE
-
+        target_joints = {}
+        joints , times, keys = keyframes
+        interpolatation = None
+        for i in range(len(joints)):
+            y = []
+            for j in range(len(keys[i])):
+                y.append(keys[i][j][0])   
+            tck = splrep(times[i],y,w=None, xb=None, xe=None, k=3, task=0, s=None, t=None, full_output=0, per=0, quiet=1)
+            target_joints[joints[i]] = splev(perception.joint[joints[i]],tck)  
         return target_joints
 
 if __name__ == '__main__':
