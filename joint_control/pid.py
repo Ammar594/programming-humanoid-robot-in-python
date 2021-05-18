@@ -53,21 +53,18 @@ class PIDController(object):
         @return control signal
         '''
         # YOUR CODE HERE
-        #prediction variables 
-        #angle(t) = angle(t-1) + speed * dt
-        
-        prediction = sensor + self.y.pop()*self.dt
-
+        prediction = sensor + self.u*self.dt 
         # e is the error
         e = target - sensor
-        
+        self.y.appendleft(e)
+        if self.y.maxlen > 1:
+            self.y.appendleft(self.e1)
         self.u = (self.Kp + self.Ki + self.Kd)*e 
         -(self.Kp + 2*self.Kd) * self.e1 + (self.Kd)* self.e2 - prediction
 
-        self.e2 = self.e1
-        self.e1 = e
-
-        self.y.appendleft(self.u)
+        self.e1 = self.y.pop()
+        if self.y.maxlen > 1:
+            self.e2 = self.y.pop()
 
         return self.u
 
