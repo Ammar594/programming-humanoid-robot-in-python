@@ -16,16 +16,14 @@
 # add PYTHONPATH
 import os
 import sys
+
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'joint_control'))
 
-from numpy.matlib import matrix, identity
+from numpy import identity
 
 from joint_control.angle_interpolation import AngleInterpolationAgent
-import math
 import numpy as np
-from joint_control.keyframes import hello,rightBackToStand,rightBellyToStand,leftBellyToStand
-
-
+from joint_control.keyframes import hello, rightBackToStand, rightBellyToStand, leftBellyToStand
 
 
 class ForwardKinematicsAgent(AngleInterpolationAgent):
@@ -45,36 +43,40 @@ class ForwardKinematicsAgent(AngleInterpolationAgent):
                        'RArm': ['RShoulderPitch', 'RShoulderRoll', 'RElbowYaw', 'RElbowRoll']
                        }
         self.joint_offsets = {
-                        'RLeg': [[0, -50, -85], [0, 0, 0], [0, 0, 0], [0, 0, -100], [0, 0, -102.9], [0, 0, 0]],
-                        'RArm': [[0, -98, 100], [0, 0, 0], [105, 15, 0], [0, 0, 0]],
-                        'LArm': [[0, 98, 100], [0, 0, 0], [105, 15, 0], [0, 0, 0]],
-                        'LLeg': [[0, 50, -85], [0, 0, 0], [0, 0, 0], [0, 0, -100], [0, 0, -102.9], [0, 0, 0]],
-                        'Head': [[0, 0, 126.5], [0, 0, 0]]}
-
-        
+            'RLeg': [[0, -50, -85], [0, 0, 0], [0, 0, 0], [0, 0, -100], [0, 0, -102.9], [0, 0, 0]],
+            'RArm': [[0, -98, 100], [0, 0, 0], [105, 15, 0], [0, 0, 0]],
+            'LArm': [[0, 98, 100], [0, 0, 0], [105, 15, 0], [0, 0, 0]],
+            'LLeg': [[0, 50, -85], [0, 0, 0], [0, 0, 0], [0, 0, -100], [0, 0, -102.9], [0, 0, 0]],
+            'Head': [[0, 0, 126.5], [0, 0, 0]]}
 
     def think(self, perception):
         self.forward_kinematics(perception.joint)
         return super(ForwardKinematicsAgent, self).think(perception)
 
     def local_trans(self, joint_name, joint_angle):
-        '''calculate local transformation of one joint
+        """calculate local transformation of one joint
         :param str joint_name: the name of joint
         :param float joint_angle: the angle of joint in radians
         :return: transformation
         :rtype: 4x4 matrix
-        '''
+        """
+        global result
         T = identity(4)
 
         if joint_name in ["HeadYaw", "LElbowYaw", "RElbowYaw", "LHipYawPitch", "RHipYawPitch"]:
             result = np.dot(T, np.array([[np.cos(joint_angle), -np.sin(joint_angle), 0, 0], [np.sin(joint_angle),
-                                                                                        np.cos(joint_angle), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]))
+                                                                                             np.cos(joint_angle), 0, 0],
+                                         [0, 0, 1, 0], [0, 0, 0, 1]]))
         elif joint_name.endswith("Pitch"):
-            result = np.dot(T, np.array([[np.cos(joint_angle), 0, np.sin(joint_angle), 0], [0, 1, 0, 0], [-np.sin(joint_angle), 0,
-                                                                                                     np.cos(joint_angle), 0], [0, 0, 0, 1]]))
+            result = np.dot(T, np.array(
+                [[np.cos(joint_angle), 0, np.sin(joint_angle), 0], [0, 1, 0, 0], [-np.sin(joint_angle), 0,
+                                                                                  np.cos(joint_angle), 0],
+                 [0, 0, 0, 1]]))
         elif joint_name.endswith("Roll"):
-            result = np.dot(T, np.array([[1, 0, 0, 0], [0, np.cos(joint_angle), -np.sin(joint_angle), 0], [0, np.sin(joint_angle),
-                                                                                                      np.cos(joint_angle), 0], [0, 0, 0, 1]]))
+            result = np.dot(T, np.array(
+                [[1, 0, 0, 0], [0, np.cos(joint_angle), -np.sin(joint_angle), 0], [0, np.sin(joint_angle),
+                                                                                   np.cos(joint_angle), 0],
+                 [0, 0, 0, 1]]))
 
         for i in self.chains.keys():
             if joint_name in self.chains[i]:
@@ -84,10 +86,9 @@ class ForwardKinematicsAgent(AngleInterpolationAgent):
         return result
 
     def forward_kinematics(self, joints):
-        '''forward kinematicschain
+        """forward kinematicschain
         :param joints: {joint_name: joint_angle}
-        '''
-        print(joints)
+        """
         for chain_joints in self.chains.values():
             T = identity(4)
             for joint in chain_joints:
@@ -96,8 +97,10 @@ class ForwardKinematicsAgent(AngleInterpolationAgent):
                 T = np.dot(T, Tl)
                 self.transforms[joint] = T
 
+
+
+
 if __name__ == '__main__':
     agent = ForwardKinematicsAgent()
-    agent.keyframes = leftBellyToStand()
-
+    agent.keyframes = rightBackToStand()
     agent.run()
