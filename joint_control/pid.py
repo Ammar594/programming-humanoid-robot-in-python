@@ -59,8 +59,8 @@ class PIDController(object):
         self.y.appendleft(e)
         if self.y.maxlen > 1:
             self.y.appendleft(self.e1)
-        self.u = (self.Kp + self.Ki + self.Kd)*e 
-        -(self.Kp + 2*self.Kd) * self.e1 + (self.Kd)* self.e2 - prediction
+        self.u = (self.Kp + self.Ki + self.Kd)*e
+        -(self.Kp + 2*self.Kd) * self.e1 + self.Kd * self.e2 - prediction
 
         self.e1 = self.y.pop()
         if self.y.maxlen > 1:

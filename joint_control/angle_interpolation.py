@@ -18,11 +18,9 @@
     # to the angle and time of the point. The first Bezier param describes the handle that controls the curve
     # preceding the point, the second describes the curve following the point.
 '''
-
-
 from pid import PIDAgent
 from keyframes import rightBackToStand
-import numpy as np
+
 
 class AngleInterpolationAgent(PIDAgent):
     def __init__(self, simspark_ip='localhost',
@@ -41,8 +39,8 @@ class AngleInterpolationAgent(PIDAgent):
 
     def angle_interpolation(self, keyframes, perception):
         target_joints = {}
-        
-        if(self.startTime == -1):
+
+        if self.startTime == -1:
             self.startTime = perception.time
         adjustTime = perception.time - self.startTime
         joints, times, keys = keyframes
@@ -50,46 +48,50 @@ class AngleInterpolationAgent(PIDAgent):
         skipJoints = 0
         for (m, name) in enumerate(joints):
             minTime = 0
-            maxTime = 0  
-            keyframe = 0  
-            jointTimes = times[m]    
-                             
-            if (jointTimes[-1] < adjustTime):
+            maxTime = 0
+            keyframe = 0
+            jointTimes = times[m]
+
+            if jointTimes[-1] < adjustTime:
                 skipJoints += 1
-                if(skipJoints == len(joints)):
+                if skipJoints == len(joints):
                     self.startTime = -1
-                    self.keyframes = ([],[],[])
+                    self.keyframes = ([], [], [])
                 continue
-            
+
             for n in range(len(jointTimes)):
                 maxTime = jointTimes[n]
-                
-                if ((minTime <= adjustTime and adjustTime <= maxTime)): 
+
+                if minTime <= adjustTime <= maxTime:
                     keyframe = n
                     break
                 minTime = maxTime
-            
-            i = (adjustTime - minTime) / (maxTime - minTime)
-            
-            if (keyframe == 0):
+            try:
+                i = (adjustTime - minTime) / (maxTime - minTime)
+            except:
+                i = 0
+
+            if keyframe == 0:
                 p0 = 0
                 p1 = 0
                 p3 = keys[m][keyframe][0]
                 p2 = p3 + keys[m][keyframe][1][2]
 
             else:
-                p0 = keys[m][keyframe-1][0]
-                p1 = p0 + keys[m][keyframe-1][2][2]
+                p0 = keys[m][keyframe - 1][0]
+                p1 = p0 + keys[m][keyframe - 1][2][2]
                 p3 = keys[m][keyframe][0]
                 p2 = p3 + keys[m][keyframe][1][2]
-                
-            angle = ((1 - i)**3)* p0 + 3*i *((1 - i)**2) * p1 + 3*(i**2) * (1-i) * p2 + (i**3) * p3
+
+            angle = ((1 - i) ** 3) * p0 + 3 * i * ((1 - i) ** 2) * p1 + 3 * (i ** 2) * (1 - i) * p2 + (i ** 3) * p3
 
             target_joints[name] = angle
-            if(name == "LHipYawPitch"):
+            if name == "LHipYawPitch":
                 target_joints["RHipYawPitch"] = angle
-     
+
         return target_joints
+
+
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
